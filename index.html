@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Dungeon Crawler</title>
+    <style>
+      @keyframes enemyBlink
+      {
+        from {background: green;}
+        to {background: red;}
+      }
+      
+      @-webkit-keyframes myfirst /* Safari and Chrome */
+      {
+        from {background: green;}
+        to {background: red;}
+      }
+      
+      body {
+        font-family: monospace;
+      }
+      
+      span {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        font-size: 16px;
+        text-align: center;
+        line-height: 16px;
+      }
+      
+      .player {
+        background: orange;
+      }
+      
+      .playerWeak {
+        background: green;
+      }
+      
+      .playerReviving {
+        background: green;
+        animation: myfirst 1s;
+        -webkit-animation: myfirst 1s;
+      }
+      
+      .playerDead {
+        background: red;
+      }
+      
+      .tile {
+        color: black;
+      }
+      
+      .score {
+        font-weight:bold;
+        margin-bottom: 5px;
+      }
+      
+      .goldScore {
+        color: gold;
+      }
+      
+    </style>
+  </head>
+  <body>
+    <div class="score">Your Gold: <span class="goldScore" id="goldScore">0</span></div>
+    <div id="map"></div>
+    
+    <script>
+      var player1;
+      var enemies;
+      var enemyMover;
+      var weakStyle;
+      
+      var mapDiv = document.getElementById("map");
+      var goldScore = document.getElementById("goldScore");
+      
+      // This is the active map.
+      var map;
+      // This is the starting map.
+      var mapTemplate;
+      
+      var level = prompt("Which level do you want to play? (1-3)");
+      
+      
+      if (level === "1") {
+        
+        mapTemplate = [['#', '#', '#', '#', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', 'G', 'P', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '#', '#', '#', '#', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', 'G', '.', '.', '#', '.', '.', '#', 'P'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.', '.', '#', 'G'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '#', '#'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', 'G', 'P']
+                        ];
+      }
+      
+      else if (level === "2") {
+        
+        mapTemplate = [['2', '#', '#', '#', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', 'G', 'P', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '#', '#', '#', '#', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', 'G', '.', '.', '#', '.', '.', '#', 'P'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.', '.', '#', 'G'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '#', '#'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', 'G', 'P']
+                        ];
+      }
+      
+      else if (level === "3") {
+        
+        mapTemplate = [['3', '#', '#', '#', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', 'G', 'P', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '#', '#', '#', '#', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', 'G', '.', '.', '#', '.', '.', '#', 'P'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.', '.', '#', 'G'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '#', '#'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', 'G', 'P']
+                        ];
+      }
+      else {
+        
+        mapTemplate = [[' ', '#', '#', '#', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', 'G', 'P', '.', '.'],
+                         ['#', '.', '.', '#', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+                         ['#', '.', '#', '#', '#', '#', '.', '.', '#', '.'],
+                         ['#', '.', '.', '.', '.', 'G', '.', '.', '#', '.', '.', '#', 'P'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.', '.', '#', 'G'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '.', '.'],
+                         ['#', '.', '.', '.', '.', '#', '.', '#', '#', '#'],
+                         ['#', '.', '.', '.', '.', '.', '.', '.', 'G', 'P']
+                        ];
+      }
+      // Initialize the data for player 1 and the enemies.
+      function initialize() {
+        
+        // deep clone the map.
+        map = JSON.parse(JSON.stringify(mapTemplate));
+        
+        player1 = {};
+        player1.x = 3;
+        player1.y = 4;
+        player1.gold = 0;
+        player1.canCollectGold = true;
+        
+        enemies = [];
+        
+        if (level === "1") {
+        
+          enemies[0] = {};
+          enemies[0].x = 1;
+          enemies[0].y = 5;
+          
+          enemies[1] = {};
+          enemies[1].x = 9;
+          enemies[1].y = 9;
+        }
+        
+        else if (level === "2") {
+        
+          enemies[0] = {};
+          enemies[0].x = 1;
+          enemies[0].y = 5;
+          
+        }
+        
+        else if (level === "3") {
+        
+          enemies[0] = {};
+          enemies[0].x = 1;
+          enemies[0].y = 5;
+          
+        
+        }
+        
+         else {
+        
+          enemies[0] = {};
+          enemies[0].x = 1;
+          enemies[0].y = 5;
+          
+          
+        }
+        
+        goal = {};
+        goal.isOpened = false;
+        goal.target = 400;
+        goal.x = 3;
+        goal.y = 13;
+        
+        drawWorld();
+        startEnemies();
+      }
+      
+      // Draw the map, player1 and the enemies on the page.
+      function drawWorld() {
+        // create a string that will be all the html for the map
+        var out = "";
+        
+        // loop through the map rows
+        for (var row = 0; row < map.length; row += 1) {
+          
+          // loop through the columns for this particular row
+          for (var col = 0; col < map[row].length; col += 1) {
+            
+            // decide what to draw
+            if (player1.x === col && player1.y === row) {
+              // this is where the player is, so draw the player
+              out += "<span class='player'>O</span>";
+            } else if (isEnemyLocation (col, row)) {
+              var enemy = whoIsHere(col, row);
+              if (enemy.isDead) {
+                out += "<span class='playerDead'>X</span>";
+              } else {
+                if (enemy.isWeak) {
+                  out += "<span class='" + weakStyle + "'>E</span>";
+                  
+                } else {
+                  out += "<span class='player'>E</span>";
+                }
+              }
+            } else if (isGoalLocation(col, row)) {
+              var goalChar = "=";
+              if (goal.isOpened) {
+                goalChar = "O";
+              }
+              out += "<span class='goal' id=\"" + row + "-" + col + "\">" + goalChar + "</span>";
+            } else {
+              // else this is just a normal tile, so draw that tile.
+              out += "<span class='tile' id=\"" + row + "-" + col + "\">" + map[row][col] + "</span>";
+            }
+            
+          }
+          
+          // add a <br> so that the next row goes on a new line
+          out += "<br>";
+        }
+        
+        // put this in the web page
+        mapDiv.innerHTML = out;
+        
+        goldScore.innerHTML = player1.gold;
+      }
+      
+      // Returns true if the given object is at the given x-y location.
+      function isHere(xPos, yPos, obj) {
+        if (obj.x === xPos && obj.y === yPos) {
+          return true;
+        }
+        return false;
+      }
+      
+      // Determines if the goal is at the given x-y position.
+      function isGoalLocation(col, row) {
+        return col === goal.x && row === goal.y;
+      }
+      
+      // Determines if an enemy is at the given x-y position.
+      function isEnemyLocation(xPos, yPos) {
+        var length = enemies.length;
+        for (var i = 0; i < length; i++) {
+          var enemy = enemies[i];
+          if (isHere(xPos, yPos, enemy)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      
+      // Returns the obj, if any, that occupies the given x-y location.
+      function whoIsHere(xPos, yPos) {
+        if (isHere(xPos, yPos, player1)) {
+          return player1;
+        } else {
+          var length = enemies.length;
+          for (var i = 0; i < length; i++) {
+            var enemy = enemies[i];
+            if (isHere(xPos, yPos, enemy)) {
+              return enemy;
+            }
+          }
+        }
+      }
+      
+      // Moves an obect (player1 or an enemy) to the given x-y position.
+      function moveObject(xPos, yPos, obj) {
+        
+        // make sure the new Y position is inside of the map.
+        // We can do this by making sure yPos is greater or equal to 0 and less than the map's length.
+        if (yPos >= 0 && yPos < map.length) {
+          
+          // make sure the new X position is inside of the map.
+          if (xPos >= 0 && xPos < map[yPos].length) {
+            
+            var tileChar = map[yPos][xPos];
+            var occupier = whoIsHere(xPos, yPos);
+            
+            if (occupier && !occupier.isDead && !obj.isDead) {
+              if (occupier === player1 || obj === player1) {
+                // Mark the weak one as dead.
+                if (occupier.isWeak) {
+                  occupier.isDead = true;
+                  drawWorld();
+                } else if (obj.isWeak) {
+                  obj.isDead = true;
+                  drawWorld();
+                } else {
+                  initialize();
+                }
+              }
+            } else {
+              if (goal.isOpened && isGoalLocation(xPos, yPos)) {
+                goalComplete();
+              }
+              // And finally we need to make sure the player doesn't walk through a wall.
+              // We can prevent that by checking if the letter at the new position is a '#' or not.
+              // If it is a wall, we'll just do nothing. If it isn't a wall, then we'll update
+              // the player's position and redraw the map.
+              if (tileChar !== "#") {
+                if (tileChar === "G") {
+                  if (collectGold(obj)) {
+                    map[yPos][xPos] = '.';
+                  }
+                } else if (tileChar === "P" && obj === player1) {
+                  makeEnemiesWeak();
+                  map[yPos][xPos] = '.';
+                }
+                obj.x = xPos;
+                obj.y = yPos;
+                drawWorld();
+              } // end wall check
+            }
+          } // end x check
+        } // end y check
+      }
+      
+      // If the object can collect gold, give it some gold.
+      function collectGold(obj) {
+        if (obj.canCollectGold) {
+          obj.gold = obj.gold + 100;
+          if (obj.gold >= goal.target) {
+            goal.isOpened = true;
+          }
+          return true;
+        }
+        return false;
+      }
+      
+      function goalComplete() {
+        stopEnemies();
+        // TBD
+      }
+      
+      function stopEnemies() {
+        clearInterval(enemyMover);
+        delete enemyMover;
+      }
+      
+      // Move each enemy one position.
+      function moveEnemies() {
+        var length = enemies.length;
+        for (var i = 0; i < length; i += 1) {
+          var e = enemies[i];
+          if (!e.isDead) {
+            var moveX;
+            var moveY;
+            var moveXFirst = Math.abs(player1.x - e.x) > Math.abs(player1.y - e.y);
+            var moveXAmt = (player1.x < e.x) ? -1 : 1;
+            var moveYAmt = (player1.y < e.y) ? -1 : 1;
+            
+            if (e.isWeak) {
+              // If the enemy is weak, make it run away.
+              moveXAmt = -moveXAmt;
+              moveYAmt = -moveYAmt;
+            }
+            
+            if (moveXFirst) {
+              // Try to move in the X direction.
+              moveX = e.x + moveXAmt;
+              moveY = e.y;
+              if (isWall(moveX, moveY)) {
+                // Can't move in the x direction, so try to move in the Y direction.
+                moveX = e.x;
+                moveY = e.y + moveYAmt;
+              }
+            } else {
+              // Try to move the Y direction.
+              moveX = e.x;
+              moveY = e.y + moveYAmt;
+              if (isWall(moveX, moveY)) {
+                // Can't move in the y direction, so try to move in the X direction.
+                moveX = e.x + moveXAmt;
+                moveY = e.y;
+              }
+            }
+            
+            if (!isWall(moveX, moveY)) {
+              moveObject(moveX, moveY, e);
+            }
+          }
+        }
+      }
+      
+      function isWall(xPos, yPos) {
+        return map[yPos][xPos] === '#';
+      }
+      
+      
+      function startEnemies() {
+        if (!enemyMover) {
+          if (level ==="1"){
+            enemyMover = setInterval(moveEnemies, 500);
+          }
+          else if (level ==="2"){
+            enemyMover = setInterval(moveEnemies, 400);
+          }
+          else if (level ==="3"){
+            enemyMover = setInterval(moveEnemies, 300);
+          }
+            else{
+              enemyMover = setInterval(moveEnemies, 200);
+          }
+        }
+      }
+      
+      function makeEnemiesWeak() {
+        weakStyle = 'playerWeak';
+        for (var i = 0; i < enemies.length; i++) {
+          enemies[i].isWeak = true;
+        }
+        setTimeout(reviveEnemies, 2000);
+      }
+      
+      function reviveEnemies() {
+        weakStyle = 'playerReviving';
+        setTimeout(makeEnemiesStrong, 2000);
+      }
+      
+      function makeEnemiesStrong() {
+        for (var i = 0; i < enemies.length; i++) {
+          var enemy = enemies[i];
+          if (!enemy.isDead) {
+            enemies[i].isWeak = false;
+          }
+        }
+      }
+      
+      // When the user presses an arrow key on the keyboard, we want to move the player.
+      // This function gets ran every time a user presses a key.
+      // The "event" variable is an object that contains information about what key was pressed.
+      // We can get the key that was pressed from the event.keyCode.
+      // event.keyCode is a number, but we can figure out what that number means from this web site:
+      // http://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
+      
+      document.body.onkeydown = function (event) {
+        var newX = player1.x,
+            newY = player1.y;
+        
+        if (event.keyCode === 37) {        // left arrow
+          newX += -1;
+        } else if (event.keyCode === 38) { // up arrow
+          newY += -1;
+        } else if (event.keyCode === 39) { // right arrow
+          newX += 1;
+        } else if (event.keyCode === 40) { // down arrow
+          newY += 1;
+        }
+        
+        moveObject(newX, newY, player1);
+      } // end onkeydown
+      
+      initialize();
+    </script>
+  </body>
+</html>

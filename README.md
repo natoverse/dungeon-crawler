@@ -1,0 +1,1 @@
+This is a simple dungeon crawler game to teach programming. The game functions much like an ASCII art Pac-Man: you move your character around the map using the arrow keys while avoiding the enemies. Eating the power up makes the enemies vulnerable, and you want to collect gold along the way. One you have collected all of the gold, the exit opens and you can complete the level.
